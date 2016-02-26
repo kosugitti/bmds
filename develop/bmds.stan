@@ -6,33 +6,37 @@ data{
 
 parameters{
  vector[N] x[p];
- matrix<lower=0>[N,N] phi; #error
+ vector<lower=0>[N*(N-1)/2] phi; #error
  vector<lower=0>[p] lambda ; #Hyper parameter
 }
 
 transformed parameters{
-  matrix<lower=0>[N,N] delta;
-  real di;
-  for(i in 1:N){
-    for(j in (i+1):N){
-      di <- 0;
-      for(k in 1:p){
-        di <- di +(x[k,i]-x[k,j])^2;
+  vector<lower=0>[N*(N-1)/2] delta;
+  {
+    int idx;
+    idx <- 1;
+    for(i in 1:(N-1)){
+      for(j in (i+1):N){
+        real di;
+        di <- 0.0;
+        for(k in 1:p){
+          di <- di +(x[k,i]-x[k,j])^2;
+        }
+        delta[idx] <- sqrt(di);
+        idx <- idx + 1;
       }
-      delta[i,j] <- sqrt(di);
-      delta[j,i] <- delta[i,j];
     }
-    delta[i,i] <- 0;
   }
 }
 
 model{
-  for(i in 1:N){
+  int idx;
+  idx <- 1;
+  for(i in 1:(N-1)){
     for(j in (i+1):N){
-      D[i,j] ~ normal(delta[i,j],phi[i,j]);
-      D[j,i] ~ normal(delta[j,i],phi[j,i]);
-      phi[i,j] ~ cauchy(0,5);
-      phi[j,i] ~ cauchy(0,5);
+      D[i,j] ~ normal(delta[idx],phi[idx]);
+      phi[idx] ~ cauchy(0,5);
+      idx <- idx + 1;
     }
   }
   for(i in 1:p){
