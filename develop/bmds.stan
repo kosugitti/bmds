@@ -20,7 +20,7 @@ transformed parameters{
         real di;
         di <- 0.0;
         for(k in 1:p){
-          di <- di +(x[k,i]-x[k,j])^2;
+          di <- di +(x[i,k]-x[j,k])^2;
         }
         delta[idx] <- sqrt(di);
         idx <- idx + 1;
@@ -35,12 +35,12 @@ model{
   for(i in 1:(N-1)){
     for(j in (i+1):N){
       D[i,j] ~ normal(delta[idx],phi[idx]);
-      phi[idx] ~ cauchy(0,5);
+      phi[idx] ~ gamma(0.001,0.001);
       idx <- idx + 1;
     }
   }
   for(i in 1:p){
     x[i] ~ normal(0,lambda[i]);
-    lambda[i] ~ cauchy(0,5);
+    lambda[i] ~ gamma(0.001,0.001);
   }
 }

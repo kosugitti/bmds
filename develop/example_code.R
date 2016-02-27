@@ -25,15 +25,15 @@ text(sc,labels=c("Hyogo","Wakayama","Osaka","Nara","Siga","Kyoto"))
 
 standata <- list(N=N,p=2,D=citydist)
 
-fit_vb <- vb(stanmodel,data=standata)
-fit_sp <- sampling(stanmodel,data=standata)
-print(fit_vb,digit=2,pars="x")
-#print(fit_sp,digit=2)
+#fit_vb <- vb(stanmodel,data=standata)
+fit_sp <- sampling(stanmodel,data=standata,chain=1,iter=5000) #label.switching?
+#print(fit_vb,digit=2,pars="x")
+print(fit_sp,digit=2,pars="x")
 #library(shinystan)
-#launch_shinystan(fit_vb)
-sp <- rstan::As.mcmc.list(fit_vb)
-sp2 <- as.data.frame(matrix(unlist(sp),nrow=1000,ncol=45))
+#launch_shinystan(fit_sp)
+sp <- rstan::As.mcmc.list(fit_sp)
+sp2 <- as.data.frame(matrix(unlist(sp),nrow=2500,ncol=45))
 ret <- matrix(apply(sp2,2,mean)[1:12],ncol=2)
-plot(ret)
+plot(ret,type="n")
 text(ret,labels=c("Hyogo","Wakayama","Osaka","Nara","Siga","Kyoto"))
 
