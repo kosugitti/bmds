@@ -28,14 +28,14 @@ C <- 4
 max.iter <- 5000
 init.list <- list()
 for(i in 1:C)
-  init.list[[i]] <- inits
+  init.list[[i]] <- list(x=sc)
   
   
 fit_vb <- vb(stanmodel,data=standata,init=inits)
 fit_sp <- sampling(stanmodel,data=standata,init=init.list,chain=C,iter=max.iter) #label.switching?
 
-print(fit_sp,digit=2)
-print(fit_vb,digit=2)
+print(fit_sp,digit=2,pars="x")
+print(fit_vb,digit=2,pars="x")
 
 
 #WAIC
@@ -90,8 +90,10 @@ for(r in 1:maxR){
     Tv[,1] <- Tv[,2]
   }
 }
-####################################################
 
+
+################################################# if use vb
+# sp <- rstan::extract(fit_vb,pars="x")$x
 
 ########### result and plot
 
