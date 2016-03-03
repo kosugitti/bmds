@@ -22,8 +22,8 @@ citydist <- matrix(c(  0,134, 85,116,118, 60,
 N <- 6
 P <- 2
 sc <- cmdscale(citydist,P)
-# plot(sc)
-# text(sc,labels=c("Hyogo","Wakayama","Osaka","Nara","Siga","Kyoto"))
+plot(sc,type="n")
+text(sc,labels=c("Hyogo","Wakayama","Osaka","Nara","Siga","Kyoto"))
 
 standata <- list(N=N,P=P,D=citydist)
 initdata <- list(x=sc)
@@ -31,21 +31,13 @@ initdata <- list(x=sc)
 fit_vb <- vb(stanmodel,data=standata,init=initdata)
 fit_sp <- sampling(stanmodel,data=standata,init=list(initdata,initdata,initdata,initdata),chain=4,iter=5000) #label.switching?
 
-fit_sp <- sampling(stanmodel,data=standata,chain=4,iter=5000) #label.switching?
-
-print(fit_sp,digit=2,pars="x")
-print(fit_vb,digit=2,pars="x")
+print(fit_sp,digit=2)
+print(fit_vb,digit=2)
 # library(shinystan)
 # launch_shinystan(fit_sp)
 sp <- rstan::extract(fit_sp,pars="x")$x
 ### mcmc.list から情報を抜き出す
 iter <- length(sp)/(N*P)
-a <- apply(sp,c(2,3),mean)
-
-sp2 <- as.data.frame(matrix(unlist(sp),nrow=2500,ncol=45))
-ret <- matrix(apply(sp2,2,mean)[1:12],ncol=2)
-plot(ret,type="n")
-text(ret,labels=c("Hyogo","Wakayama","Osaka","Nara","Siga","Kyoto"))
 
 #### post MCMC process; For translation-and-reflection issue
 #
@@ -82,10 +74,20 @@ for(r in 1:maxR){
     Tv[s,2] <- which.min(norm.vec)
   }
   if(sum(Tv[,1]-Tv[,2])==0){
+    print(r)
     break;
   }else{
     Tv[,1] <- Tv[,2]
   }
 }
 
+configure <- apply(sp,c(2:3),median)
+configure.sd <- apply(sp,c(2:3),sd)
+
+plot(configure,type="n")
+text(configure,labels=c("Hyogo","Wakayama","Osaka","Nara","Siga","Kyoto"))
+x<- seq(-pi,pi,length=100)
+for(n in 1:N){
+  lines(configure[n,1]+configure.sd[n,1]*cos(x),configure[n,2]+configure.sd[n,2]*sin(x))
+}
 

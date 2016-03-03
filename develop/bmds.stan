@@ -44,3 +44,4 @@ model{
     lambda[p] ~ gamma(0.001,0.001);
   }
 }
+
