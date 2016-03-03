@@ -1,11 +1,4 @@
 rm(list=ls())
-# cmd
-iris.dist <-dist(iris[,-5]) #ラベルの部分を除く！
-iris.cmd<-cmdscale(iris.dist)
-plot(iris.cmd,type='n')
-iris.lab <-factor(c(rep("S",50),rep("C",50),rep("V",50)))
-text(iris.cmd,labels=iris.lab,col=unclass(iris.lab))
-
 # B-MDS
 library(rstan)
 rstan_options(auto_write = TRUE)
@@ -13,6 +6,7 @@ options(mc.cores = parallel::detectCores())
 
 stanmodel <- stan_model("develop/bmds.stan",model_name="bmds")
 
+# example-data
 citydist <- matrix(c(  0,134, 85,116,118, 60,
                      134,  0, 68, 66,145, 141,
                       85, 68,  0, 32, 83, 75,
@@ -25,14 +19,30 @@ sc <- cmdscale(citydist,P)
 plot(sc,type="n")
 text(sc,labels=c("Hyogo","Wakayama","Osaka","Nara","Siga","Kyoto"))
 
-standata <- list(N=N,P=P,D=citydist)
-initdata <- list(x=sc)
 
-fit_vb <- vb(stanmodel,data=standata,init=initdata)
-fit_sp <- sampling(stanmodel,data=standata,init=list(initdata,initdata,initdata,initdata),chain=4,iter=5000) #label.switching?
+### for BMDS
+standata <- list(N=N,Npair=(N*(N-1)/2),P=P,D=citydist)
+inits <- list(x=sc)
+C <- 4
+max.iter <- 5000
+init.list <- list()
+for(i in 1:C)
+  init.list[[i]] <- inits
+  
+  
+fit_vb <- vb(stanmodel,data=standata,init=inits)
+fit_sp <- sampling(stanmodel,data=standata,init=init.list,chain=C,iter=max.iter) #label.switching?
 
 print(fit_sp,digit=2)
 print(fit_vb,digit=2)
+
+
+#WAIC
+library(loo)
+log_lik <- rstan::extract(fit_sp)$log_lik
+waic(log_lik)
+loo(log_lik)
+
 # library(shinystan)
 # launch_shinystan(fit_sp)
 sp <- rstan::extract(fit_sp,pars="x")$x
@@ -80,6 +90,10 @@ for(r in 1:maxR){
     Tv[,1] <- Tv[,2]
   }
 }
+####################################################
+
+
+########### result and plot
 
 configure <- apply(sp,c(2:3),median)
 configure.sd <- apply(sp,c(2:3),sd)
