@@ -2,7 +2,7 @@ data{
   int<lower=0> N; # data size
   int<lower=1> Npairs; # number of pairs of data
   int<lower=0> P; # number of dimensions
-  matrix<lower=0>[N,N] D; #disimmirality matrix 
+  row_vector<lower=0>[Npairs] D; #observed dissimirality
 }
 
 parameters{
@@ -31,14 +31,9 @@ transformed parameters{
 }
 
 model{
-  int idx;
-  idx <- 1;
-  for(i in 1:(N-1)){
-    for(j in (i+1):N){
-      D[i,j] ~ normal(delta[idx],phi[idx]);
-      phi[idx] ~ gamma(0.001,0.001);
-      idx <- idx + 1;
-    }
+  for(idx in 1:Npairs){
+    D[idx] ~ normal(delta[idx],phi[idx]);
+    phi[idx] ~ gamma(0.001,0.001);
   }
   for(p in 1:P){
     x[p] ~ normal(0,lambda[p]);
@@ -48,15 +43,7 @@ model{
 
 generated quantities{
   real log_lik[Npairs];
-  {
-    int idx;
-    idx <- 1;
-    for(i in 1:(N-1)){
-      for(j in (i+1):N){
-        log_lik[idx] <- normal_log(D[i,j],delta[idx],phi[idx]);
-        idx <- idx +1;
-      }
-    }
-  }
+  for(idx in 1:Npairs)
+    log_lik[idx] <- normal_log(D[idx],delta[idx],phi[idx]);
 }
 

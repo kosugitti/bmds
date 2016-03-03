@@ -19,9 +19,10 @@ sc <- cmdscale(citydist,P)
 plot(sc,type="n")
 text(sc,labels=c("Hyogo","Wakayama","Osaka","Nara","Siga","Kyoto"))
 
+dist_vec <- as.vector(dist(citydist))
 
 ### for BMDS
-standata <- list(N=N,Npair=(N*(N-1)/2),P=P,D=citydist)
+standata <- list(N=N,Npairs=(N*(N-1)/2),P=P,D=dist_vec)
 inits <- list(x=sc)
 C <- 4
 max.iter <- 5000
@@ -84,7 +85,6 @@ for(r in 1:maxR){
     Tv[s,2] <- which.min(norm.vec)
   }
   if(sum(Tv[,1]-Tv[,2])==0){
-    print(r)
     break;
   }else{
     Tv[,1] <- Tv[,2]
