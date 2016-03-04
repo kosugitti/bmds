@@ -27,9 +27,3 @@ ls <- label.switching(method="ECR",
                       mcmc=mcmc.pars,
                       constraint=1,
                       data=x)
-
-library(mvtnorm)
-K <- 4
-iterations <- 11000
-burn <- 1000
-gs <- gibbsSampler(iterations=iterations,K=K,x=x,burn=burn)
