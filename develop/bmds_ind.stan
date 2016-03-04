@@ -9,13 +9,13 @@ data{
 parameters{
   vector[P] x[N]; # configure
   vector<lower=0>[Npairs] phi; #error
-  vector<lower=0>[P] w[H]; # weights
-  vector<lower=0>[H] tau; # sd of weights
-  vector<lower=0>[P] lambda ; #Hyper parameter
+  simplex[P] w[H]; # weights
+  vector<lower=0>[P] invtau2 ; #Hyper parameter
 }
 
 transformed parameters{
   vector<lower=0>[Npairs] delta[H];
+  vector<lower=0>[P] tau;
   for(h in 1:H){
     int idx;
     idx <- 1;
@@ -31,6 +31,9 @@ transformed parameters{
       }
     }
   }
+  for(p in 1:P){
+    tau[p] <- inv_sqrt(invtau2[p]);
+  }
 }
 
 model{
@@ -40,22 +43,17 @@ model{
     for(i in 1:(N-1)){
       for(j in (i+1):N){
         D[h,idx] ~ normal(delta[h,idx],phi[idx]);
+        phi[idx] ~ cauchy(0,2.5);
         idx <- idx + 1;
       }
     }
   }
 
   for(p in 1:P){
-    x[p] ~ normal(0,lambda[p]);
-    lambda[p] ~ gamma(0.001,0.001);
+    x[p] ~ normal(0,tau[p]);
   }
+  invtau2 ~ gamma(0.001,0.001);
   
-  for(h in 1:H){
-    for(p in 1:P){
-      w[h,p] ~ normal(1,tau[h]);
-    }
-    tau[h] ~ cauchy(0,2.5);
-  }
 }
 
 generated quantities{
