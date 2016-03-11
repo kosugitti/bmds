@@ -14,8 +14,8 @@ K <- 3
 V <- ncol(dat)
 N <- nrow(dat)
 
-# stanmodel <- stan_model("develop/refs/soft-k-means.stan",model_name="soft-K-means")
-stanmodel <- stan_model("develop/gmm_softKmeans_simplex.stan",model_name="softKmeans_simplex")
+stanmodel <- stan_model("develop/refs/soft-k-means.stan",model_name="soft-K-means")
+# stanmodel <- stan_model("develop/gmm_softKmeans_simplex.stan",model_name="softKmeans_simplex")
 # stanmodel <- stan_model("develop/gmm_softKmeans_multi.stan",model_name="softKmeans_multi") # divergent?!
 # stanmodel <- stan_model("develop/gmm_simplex_multi.stan",model_name="simplex_multi") # Too Slow!
 max.iter <- 3000
@@ -38,6 +38,8 @@ init <- list(mu=kmeans.center,Sigma=covs)
 fit_vb <- vb(stanmodel,data=standata)
 print(fit_vb,pars="mu")
 
+fit_vb <- vb(stanmodel2,data=standata)
+print(fit_vb,pars="mu")
 
 
 # 一つならラベルスイッチングは起きない
@@ -62,13 +64,11 @@ for(i in 1:(itr*C)){
 }
 
 
-mcmc.params <- rstan::extract(fit_sp,pars=c("mu","sig2","theta"))
+mcmc.params <- rstan::extract(fit_sp,pars=c("mu"))
 
 # mcmc * num.of.clusters * num.of.params
-mcmc.pars <- array(data=NA,dim=c(itr*C,K,3))
-mcmc.pars[,,1]<- mcmc.params$mu
-mcmc.pars[,,2]<- mcmc.params$sig2
-mcmc.pars[,,3]<- mcmc.params$theta
+mcmc.pars <- array(data=NA,dim=c(itr*C,K,4))
+mcmc.pars[,,]<- mcmc.params$mu
 
 # この関数はSJW法を使う時に必要になってくる。completeオプションに関数を渡さないといけないので！
 complete.normal.loglikelihood<-function(x,z,pars){
@@ -93,11 +93,10 @@ complete.normal.loglikelihood<-function(x,z,pars){
 # パッケージのお出まし
 library(label.switching)
 # 全方法試す
-set <- c("STEPHENS", "PRA", "ECR", "ECR-ITERATIVE-1", "ECR-ITERATIVE-2", "AIC", "SJW","DATA-BASED")
+set <- c("STEPHENS", "PRA", "ECR", "ECR-ITERATIVE-1", "ECR-ITERATIVE-2", "AIC")
 
-#ピボットは対数尤度が一番小さいやつにしてみた（なんでもいいと思う）
-log_liks <- rstan::extract(fit_sp,pars="log_lik")$log_lik
-sort(table(apply(log_liks,2,which.min)),decreasing = T)
+# , "SJW","DATA-BASED")
+
 pivot <- 158
 
 # さあ実行
@@ -109,8 +108,9 @@ ls <- label.switching(method = set,
                       p = allocK,
                       mcmc=mcmc.pars,
                       complete=complete.normal.loglikelihood,
-                      data = X)
+                      data = dat)
 # 各推定法で結果が一致したかどうか
 ls$similarity
 # 推定された所属クラスタ番号
 ls$clusters
+xtabs(~ls$clusters[1,]+iris$Species)
